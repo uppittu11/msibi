@@ -14,7 +14,7 @@ import numpy as np
 import seaborn as sns
 
 from msibi.potentials import tail_correction
-from msibi.workers import run_query_simulations
+from msibi.workers import run_query_simulations, calc_query_rdfs
 from msibi.utils.smoothing import savitzky_golay
 
 
@@ -102,11 +102,12 @@ class MSIBI(object):
         self.initialize(engine=engine)
         for n in range(start_iteration+self.n_iterations):
             run_query_simulations(self.states, engine=engine)
-
+            calc_query_rdfs(self.pairs, self.rdf_cutoff, self.dr, 
+                    self.n_rdf_points)
             for pair in self.pairs:
                 for state in pair.states:
                     r_range = np.array([0.0, self.rdf_cutoff + self.dr])
-                    pair.compute_current_rdf(state, r_range, n_bins=self.n_rdf_points+1)
+                    #pair.compute_current_rdf(state, r_range, n_bins=self.n_rdf_points+1)
                     if self.smooth_rdfs:
                         pair.states[state]['current_rdf'][:, 1] = savitzky_golay(
                                 pair.states[state]['current_rdf'][:, 1],
