@@ -69,7 +69,6 @@ def calc_query_rdfs(pairs, rdf_cutoff, dr, n_rdf_points, nprocs):
         for state in pair.states.keys():
             pair_states.append((pair, state))
             logging.debug('in initializer %d' % id(pair))
-            counter += 1
 
     # divide the rdfs to calculate roughly equally among processors
     chunksize = int(math.ceil(len(pair_states) / float(nprocs)))
@@ -91,7 +90,7 @@ def calc_query_rdfs(pairs, rdf_cutoff, dr, n_rdf_points, nprocs):
             # this should be more pythonic somehow
             pair, state, rdf, f_fit = data[0], data[1], data[2], data[3]
             for tpair in pairs:
-                for tstate in pair.states.keys():
+                for tstate in tpair.states.keys():
                     if pair.name == tpair.name and state.name == tstate.name:
                         logging.debug('in updater %d' % id(pair))
                         tpair.states[tstate]['current_rdf'] = rdf
@@ -99,17 +98,7 @@ def calc_query_rdfs(pairs, rdf_cutoff, dr, n_rdf_points, nprocs):
 
     # wait for all processes to finish (not quite sure why this is here)
     for i, p in enumerate(procs):
-        logging.debug('waiting for %d to finish' % i)
         p.join()
-
-    for pair in pairs:
-        for state in pair.states.keys():
-            logging.debug('%s, %s' % (pair.name, state.name))
-            logging.debug(pair.states[state]['current_rdf'])
-
-    for pair in pairs:
-        for state in pair.states.keys():
-            logging.debug(pair.states[state]['current_rdf'])
 
 def _rdf_worker(out_q, pair_states, r_range, n_bins):
     # each process will write a list of (pair, state, rdf, f_fit)
