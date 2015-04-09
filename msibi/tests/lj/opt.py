@@ -37,5 +37,5 @@ for state, target, alpha in zip(states, rdf_targets, alphas):
 pairs = [pair0]
 
 # Do magic.
-opt.optimize(states, pairs, n_iterations=5, engine='hoomd')
+opt.optimize(states, pairs, n_iterations=5, engine='hoomd', nprocs=8)
 opt.plot()

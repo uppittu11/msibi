@@ -92,7 +92,7 @@ class MSIBI(object):
         self.logfile = open(status_filename, 'w')
 
     def optimize(self, states, pairs, n_iterations=10, engine='hoomd',
-            start_iteration=0):
+            start_iteration=0, nprocs=1):
         """
         """
         self.states = states
@@ -103,11 +103,10 @@ class MSIBI(object):
         for n in range(start_iteration+self.n_iterations):
             run_query_simulations(self.states, engine=engine)
             calc_query_rdfs(self.pairs, self.rdf_cutoff, self.dr, 
-                    self.n_rdf_points)
+                    self.n_rdf_points, nprocs)
             for pair in self.pairs:
                 for state in pair.states:
                     r_range = np.array([0.0, self.rdf_cutoff + self.dr])
-                    #pair.compute_current_rdf(state, r_range, n_bins=self.n_rdf_points+1)
                     if self.smooth_rdfs:
                         pair.states[state]['current_rdf'][:, 1] = savitzky_golay(
                                 pair.states[state]['current_rdf'][:, 1],
@@ -119,7 +118,6 @@ class MSIBI(object):
                 pair.update_potential(self.pot_r, self.r_switch)
                 pair.save_table_potential(self.pot_r, self.dr, iteration=n,
                                           engine=engine)
-
             print("Finished iteration {0}".format(n))
 
     def initialize(self, engine='hoomd', potentials_dir=None):
