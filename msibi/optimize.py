@@ -114,15 +114,17 @@ class MSIBI(object):
 
     def _update_potentials(self, iteration, engine):
         """Update the potentials for each pair. """
-        # Gather all the RDF information and update the potential
         updated_rdf_f_fit = self._recompute_rdfs(iteration)
+
         state_id = 0
         for pair in self.pairs:
             for state in pair.states:
+                # Gather all the RDF information.
                 rdf, f_fit = updated_rdf_f_fit[state_id]
                 pair.states[state]['current_rdf'] = rdf
                 pair.states[state]['f_fit'].append(f_fit)
                 state_id += 1
+            # Update the potential.
             pair.update_potential(self.pot_r, self.r_switch)
             pair.save_table_potential(self.pot_r, self.dr, iteration=iteration,
                                       engine=engine)
