@@ -1,6 +1,7 @@
 from __future__ import division
 
 import logging
+import math
 import multiprocessing as mp
 import os
 
@@ -139,39 +140,46 @@ class MSIBI(object):
                 state_id += 1
 
         # Chunk and launch RDF processes.
+        # CTK: Everything below should be "more correctly" accomplishable with
+        # a pool but I couldn't get it to work properly.
+        n_procs = mp.cpu_count()
+        state_ids = manager_dict.keys()
+        chunk_size = math.ceil(len(state_ids) / n_procs)
         procs = list()
-        for state_id in manager_dict.keys():
+        for n in range(n_procs):
+            state_ids_chunk = state_ids[n * chunk_size: (n + 1) * chunk_size]
             p = mp.Process(target=self._rdf_worker,
-                           args=(manager_dict, state_id, iteration))
+                           args=(manager_dict, state_ids_chunk, iteration))
             p.start()
             procs.append(p)
         for p in procs:
             p.join()
         return manager_dict
 
-    def _rdf_worker(self, manager_dict, state_id, iteration):
-        """Recompute the current RDF for one state of one pair. """
-        pair, state = manager_dict[state_id]
-        rdf, f_fit = pair.compute_current_rdf(state, self.rdf_r_range,
-                                              n_bins=self.rdf_n_bins,
-                                              smooth=self.smooth_rdfs)
+    def _rdf_worker(self, manager_dict, state_ids, iteration):
+        """Recompute the current RDFs for a chunk of (pair, state) tuples. """
+        for state_id in state_ids:
+            pair, state = manager_dict[state_id]
+            rdf, f_fit = pair.compute_current_rdf(state, self.rdf_r_range,
+                                                  n_bins=self.rdf_n_bins,
+                                                  smooth=self.smooth_rdfs)
 
-        # Save RDF to a file for post-processing.
-        filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(
-            pair.name, state.name, iteration)
-        np.savetxt(filename, rdf - self.dr / 2)
-        logging.info('pair {0}, state {1}, iteration {2}: {3:f}'.format(
-                     pair.name, state.name, iteration, f_fit))
+            # Save RDF to a file for post-processing.
+            filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(
+                pair.name, state.name, iteration)
+            np.savetxt(filename, rdf - self.dr / 2)
+            logging.info('pair {0}, state {1}, iteration {2}: {3:f}'.format(
+                         pair.name, state.name, iteration, f_fit))
 
-        # Store the RDF and fitness function in the shared dict.
-        manager_dict[state_id] = (rdf, f_fit)
-        # NOTE: Originally this tuple was (pair, state). We are overwriting it
-        # here both to pass the information back out and signify that this
-        # (pair, state) has been re-computed. There may be a better way to do
-        # this.
-        #
-        # For more info see:
-        # https://docs.python.org/2/library/multiprocessing.html#multiprocessing.managers.SyncManager.list
+            # Store the RDF and fitness function in the shared dict.
+            manager_dict[state_id] = (rdf, f_fit)
+            # NOTE: Originally this tuple was (pair, state). We are overwriting
+            # it here both to pass the information back out and signify that
+            # this (pair, state) has been re-computed. There may be a better way
+            # to do this.
+            #
+            # For more info see:
+            # https://docs.python.org/2/library/multiprocessing.html#multiprocessing.managers.SyncManager.list
 
     def initialize(self, engine='hoomd', potentials_dir=None):
         """Create initial table potentials and the simulation input scripts.

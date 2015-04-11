@@ -6,7 +6,7 @@ import pytest
 
 from msibi import MSIBI, State, Pair, mie
 
-@pytest.mark.skipif(True)
+@pytest.mark.skipif(True, reason='Not working yet')
 def test_full_lj():
     """Test the full Lennard-Jones optimization. """
     # Root directory for the Lennard-Jones optimization.

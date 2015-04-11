@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
 
 def run_query_simulations(states, engine='hoomd'):
     """Run all query simulations for a single iteration. """
-
     # Gather hardware info.
     gpus = _get_gpu_info()
     if gpus is None:
@@ -37,6 +36,7 @@ def run_query_simulations(states, engine='hoomd'):
     worker_args = zip(states, range(n_states), itertools.repeat(gpus))
     chunk_size = ceil(n_states / n_procs)
 
+    # Use thread pool to manage MD workers.
     pool = Pool(n_procs)
     pool.imap(worker, worker_args, chunk_size)
     pool.close()
