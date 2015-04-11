@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 
 import mdtraj as md
@@ -28,7 +29,7 @@ class Pair(object):
         self.type2 = str(type2)
         self.name = '{0}-{1}'.format(self.type1, self.type2)
         self.potential_file = ''
-        self.states = dict()
+        self.states = OrderedDict()
         if isinstance(potential, string_types):
             self.potential = np.loadtxt(potential)[:, 1]
             # TODO: this could be dangerous
@@ -68,23 +69,13 @@ class Pair(object):
                                 n_bins=n_bins)
         r *= 10
         rdf = np.vstack((r, g_r)).T
-        self.states[state]['current_rdf'] = rdf
 
         # Compute fitness function comparing the two RDFs.
         f_fit = calc_similarity(rdf[:, 1], self.states[state]['target_rdf'][:, 1])
-        self.states[state]['f_fit'].append(f_fit)
 
         if smooth:
-            self.states[state]['current_rdf'][:, 1] = savitzky_golay(
-                self.states[state]['current_rdf'][:, 1], 5, 1, deriv=0, rate=1)
-
-    def save_current_rdf(self, state, iteration, dr):
-        """ """
-        filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(
-                self.name, state.name, iteration)
-        rdf = self.states[state]['current_rdf']
-        rdf[:, 0] -= dr / 2
-        np.savetxt(filename, rdf)
+            rdf[:, 1] = savitzky_golay(rdf[:, 1], 5, 1, deriv=0, rate=1)
+        return rdf, f_fit
 
     def update_potential(self, pot_r, r_switch=None):
         """Update the potential using all states. """

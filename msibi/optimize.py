@@ -1,6 +1,7 @@
 from __future__ import division
 
 import logging
+import multiprocessing as mp
 import os
 
 import matplotlib as mpl
@@ -8,7 +9,6 @@ try:  # For use on clusters where the $DISPLAY value may not be set.
     os.environ['DISPLAY']
 except KeyError:
     mpl.use('Agg')
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -113,22 +113,65 @@ class MSIBI(object):
 
     def _update_potentials(self, iteration, engine):
         """Update the potentials for each pair. """
+        # Gather all the RDF information and update the potential
+        updated_rdf_f_fit = self._recompute_rdfs(iteration)
+        state_id = 0
         for pair in self.pairs:
-            self._recompute_rdfs(pair, iteration)
+            for state in pair.states:
+                rdf, f_fit = updated_rdf_f_fit[state_id]
+                pair.states[state]['current_rdf'] = rdf
+                pair.states[state]['f_fit'].append(f_fit)
+                state_id += 1
             pair.update_potential(self.pot_r, self.r_switch)
             pair.save_table_potential(self.pot_r, self.dr, iteration=iteration,
                                       engine=engine)
 
-    def _recompute_rdfs(self, pair, iteration):
-        """Recompute the current RDFs for every state used for a given pair. """
-        for state in pair.states:
-            pair.compute_current_rdf(state, self.rdf_r_range,
-                                     n_bins=self.rdf_n_bins,
-                                     smooth=self.smooth_rdfs)
-            pair.save_current_rdf(state, iteration=iteration, dr=self.dr)
-            logging.info('pair {0}, state {1}, iteration {2}: {3:f}'.format(
-                         pair.name, state.name, iteration,
-                         pair.states[state]['f_fit'][iteration]))
+    def _recompute_rdfs(self, iteration):
+        """Recompute all RDFs after a given iteration. """
+        # Give each state an ID and store it in a manager's dict which is used
+        # by _rdf_worker to lookup the pair and state from the main process.
+        manager = mp.Manager()
+        manager_dict = manager.dict()
+        state_id = 0
+        for pair in self.pairs:
+            for state in pair.states:
+                manager_dict[state_id] = (pair, state)
+                state_id += 1
+
+        # Chunk and launch RDF processes.
+        procs = list()
+        for state_id in manager_dict.keys():
+            p = mp.Process(target=self._rdf_worker,
+                           args=(manager_dict, state_id, iteration))
+            p.start()
+            procs.append(p)
+        for p in procs:
+            p.join()
+        return manager_dict
+
+    def _rdf_worker(self, manager_dict, state_id, iteration):
+        """Recompute the current RDF for one state of one pair. """
+        pair, state = manager_dict[state_id]
+        rdf, f_fit = pair.compute_current_rdf(state, self.rdf_r_range,
+                                              n_bins=self.rdf_n_bins,
+                                              smooth=self.smooth_rdfs)
+
+        # Save RDF to a file for post-processing.
+        filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(
+            pair.name, state.name, iteration)
+        np.savetxt(filename, rdf - self.dr / 2)
+        logging.info('pair {0}, state {1}, iteration {2}: {3:f}'.format(
+                     pair.name, state.name, iteration, f_fit))
+
+        # Store the RDF and fitness function in the shared dict.
+        manager_dict[state_id] = (rdf, f_fit)
+        # NOTE: Originally this tuple was (pair, state). We are overwriting it
+        # here both to pass the information back out and signify that this
+        # (pair, state) has been re-computed. There may be a better way to do
+        # this.
+        #
+        # For more info see:
+        # https://docs.python.org/2/library/multiprocessing.html#multiprocessing.managers.SyncManager.list
 
     def initialize(self, engine='hoomd', potentials_dir=None):
         """Create initial table potentials and the simulation input scripts.
