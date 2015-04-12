@@ -1,11 +1,14 @@
+from velocity import init_velocity
 all = group.all()
 nvt_int = integrate.bdnvt(group=all, T=T_final)
 integrate.mode_standard(dt=0.001)
 
 
-run(1e2)
-output_dcd = dump.dcd(filename='query.dcd', period=100, overwrite=True)
-run(1e3)
+init_velocity(group=all, T=T_final)
+run(1e4)
+os.system('rm query.dcd')
+output_dcd = dump.dcd(filename='query.dcd', period=1000, overwrite=True)
+run(1e5)
 
 output_xml = dump.xml()
 output_xml.set_params(all=True)

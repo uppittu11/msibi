@@ -80,11 +80,5 @@ def _get_gpu_info():
     if not nvidia_smi:
         return
     else:
-        smi_out = os.popen('nvidia-smi').readlines()
-        card_numbers = []
-        for i, line in enumerate(smi_out[7:]):
-            if not line.strip():
-                break
-            if i % 3 == 0:
-                card_numbers.append(line.split()[1])
-        return card_numbers
+        return [line.split()[1].replace(':', '') for 
+                line in os.popen('nvidia-smi -L').readlines()]

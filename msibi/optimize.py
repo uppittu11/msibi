@@ -146,7 +146,7 @@ class MSIBI(object):
         # a pool but I couldn't get it to work properly.
         n_procs = mp.cpu_count()
         state_ids = manager_dict.keys()
-        chunk_size = math.ceil(len(state_ids) / n_procs)
+        chunk_size = int(math.ceil(len(state_ids) / n_procs))
         procs = list()
         for n in range(n_procs):
             state_ids_chunk = state_ids[n * chunk_size: (n + 1) * chunk_size]
@@ -169,7 +169,8 @@ class MSIBI(object):
             # Save RDF to a file for post-processing.
             filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(
                 pair.name, state.name, iteration)
-            np.savetxt(filename, rdf - self.dr / 2)
+            rdf[:, 0] -= self.dr / 2.0
+            np.savetxt(filename, rdf)
             logging.info('pair {0}, state {1}, iteration {2}: {3:f}'.format(
                          pair.name, state.name, iteration, f_fit))
 
