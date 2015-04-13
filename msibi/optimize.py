@@ -69,7 +69,7 @@ class MSIBI(object):
     """
 
     def __init__(self, rdf_cutoff, n_rdf_points, pot_cutoff=None, r_switch=None,
-                 status_filename='f_fits.log', smooth_rdfs=False):
+                 status_filename='f_fits.log', smooth_rdfs=False, base_dir=None):
         self.states = []
         self.pairs = []
         self.n_iterations = 10  # Can be overridden in optimize().
@@ -93,9 +93,14 @@ class MSIBI(object):
             r_switch = self.pot_r[-5]
         self.r_switch = r_switch
 
+        if base_dir is None:
+            self.base_dir = os.getcwd()
+        else:
+            self.base_dir = base_dir
+
+        status_filename = os.path.join(self.base_dir, status_filename)
         logging.basicConfig(filename=status_filename, level=logging.INFO,
                             format='%(message)s', filemode='a')
-        self.logfile = open(status_filename, 'w')
 
     def optimize(self, states, pairs, n_iterations=10, engine='hoomd',
                  start_iteration=0):
@@ -169,8 +174,9 @@ class MSIBI(object):
             # Save RDF to a file for post-processing.
             filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(
                 pair.name, state.name, iteration)
+            filepath = os.path.join(self.base_dir, filename)
             rdf[:, 0] -= self.dr / 2.0
-            np.savetxt(filename, rdf)
+            np.savetxt(filepath, rdf)
             logging.info('pair {0}, state {1}, iteration {2}: {3:f}'.format(
                          pair.name, state.name, iteration, f_fit))
 
@@ -194,7 +200,7 @@ class MSIBI(object):
 
         """
         if not potentials_dir:
-            self.potentials_dir = os.path.join(os.getcwd(), 'potentials')
+            self.potentials_dir = os.path.join(self.base_dir, 'potentials')
         else:
             self.potentials_dir = potentials_dir
         try:
@@ -212,12 +218,8 @@ class MSIBI(object):
 
             V = tail_correction(self.pot_r, pair.potential, self.r_switch)
             pair.potential = V
-            # This file is written for viewing of how the potential evolves.
-            pair.save_table_potential(self.pot_r, self.dr, iteration=0,
+            pair.save_table_potential(self.pot_r, self.dr, iteration=-1,
                                       engine=engine)
-            # This file is overwritten at each iteration and actually used for
-            # performing the query simulations.
-            pair.save_table_potential(self.pot_r, self.dr, engine=engine)
 
         for state in self.states:
             state.save_runscript(table_potentials, table_width=len(self.pot_r),
@@ -231,7 +233,7 @@ class MSIBI(object):
             pass
 
         for pair in self.pairs:
-            for n in range(self.n_iterations):
+            for n in range(-1, self.n_iterations):
                 filename = 'step{0:d}.{1}'.format(
                     n, os.path.basename(pair.potential_file))
                 potential_file = os.path.join(self.potentials_dir, filename)
