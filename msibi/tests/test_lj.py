@@ -5,6 +5,7 @@ import numpy as np
 
 from msibi import MSIBI, State, Pair, mie
 
+
 def test_full_lj():
     """Test the full Lennard-Jones optimization. """
     # Root directory for the Lennard-Jones optimization.
