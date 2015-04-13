@@ -8,6 +8,7 @@ from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool
 import os
 from subprocess import Popen
+import sys
 
 from msibi.utils.general import backup_file
 from msibi.utils.exceptions import UnsupportedEngine
@@ -57,7 +58,7 @@ def _hoomd_worker(args):
             logging.info('    Running state {state.name} on CPU'.format(**locals()))
             cmds = ['hoomd', 'run.py']
 
-        proc = Popen(cmds, cwd=state.state_dir, stdout=log, stderr=err,
+        proc = Popen(cmds, cwd=state.state_dir, stdout=sys.stdout, stderr=sys.stdout,
                      universal_newlines=True)
         logging.info("    Launched HOOMD in {state.state_dir}".format(**locals()))
         proc.communicate()
