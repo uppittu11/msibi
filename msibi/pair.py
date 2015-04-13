@@ -74,7 +74,7 @@ class Pair(object):
         f_fit = calc_similarity(rdf[:, 1], self.states[state]['target_rdf'][:, 1])
 
         if smooth:
-            rdf[:, 1] = savitzky_golay(rdf[:, 1], 5, 1, deriv=0, rate=1)
+            rdf[:, 1] = savitzky_golay(rdf[:, 1], window_size=3, order=1, deriv=0, rate=1)
         return rdf, f_fit
 
     def update_potential(self, pot_r, r_switch=None):
