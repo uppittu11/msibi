@@ -1,5 +1,4 @@
 language: python
-compiler: gcc
 
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
@@ -10,15 +9,9 @@ python:
 before_install:
   - sudo apt-get install libboost-all-dev
   - sudo apt-get install openmpi-bin
-  # Install HOOMD-blue
-  - wget https://codeblue.umich.edu/hoomd-blue/downloads/1.0/hoomd-1.0.4.tar.bz2
-  - tar -xvf hoomd-1.0.4.tar.bz2
-  - cd hoomd-v1.0.4
-  - mkdir build
-  - cd build
-  - cmake ..
-  - make -j 2
-  - sudo make install
+  # Download and install HOOMD
+  - wget https://codeblue.umich.edu/hoomd-blue/downloads/1.0/ubuntu1204/hoomd-blue_1.0.1-0_amd64.deb
+  - sudo dpkg -i hoomd-blue*.deb
 
 install:
   - sudo apt-get update
