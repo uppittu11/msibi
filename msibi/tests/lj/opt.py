@@ -26,7 +26,7 @@ states = [state0, state1, state2]
 
 # Specify pairs.
 indices = list(itertools.combinations(range(1468), 2))  # all-all for 1468 atoms
-initial_guess = mie(opt.pot_r, 1.0, 1.0)  # 1-D array of potential values.
+initial_guess = mie(opt.pot_r, 1.5, 0.5)  # 1-D array of potential values.
 rdf_targets = [np.loadtxt('rdfs/rdf.target{0:d}.t1t1.txt'.format(i))
                for i in range(3)]
 

@@ -2,11 +2,9 @@ from itertools import combinations
 import os
 
 import numpy as np
-import pytest
 
 from msibi import MSIBI, State, Pair, mie
 
-@pytest.mark.skipif(True, reason='Not working yet')
 def test_full_lj():
     """Test the full Lennard-Jones optimization. """
     # Root directory for the Lennard-Jones optimization.
@@ -14,7 +12,8 @@ def test_full_lj():
 
     # Set up global parameters.
     rdf_cutoff = 5.0
-    opt = MSIBI(rdf_cutoff=rdf_cutoff, n_rdf_points=101, pot_cutoff=3.0, smooth_rdfs=True)
+    opt = MSIBI(rdf_cutoff=rdf_cutoff, n_rdf_points=101, pot_cutoff=3.0,
+                smooth_rdfs=True, base_dir=lj)
 
     # Specify states.
     state0 = State(k=1, T=0.5, state_dir=os.path.join(lj, 'state0'),
@@ -27,7 +26,7 @@ def test_full_lj():
 
     # Specify pairs.
     indices = list(combinations(range(1468), 2))  # all-all for 1468 atoms
-    initial_guess = mie(opt.pot_r, 1.0, 1.0)  # 1-D array of potential values.
+    initial_guess = mie(opt.pot_r, 1.5, 0.5)  # 1-D array of potential values.
     rdf_targets = [np.loadtxt(os.path.join(lj, 'rdfs/rdf.target{0:d}.t1t1.txt'.format(i)))
                    for i in range(3)]
 
@@ -42,8 +41,6 @@ def test_full_lj():
     # Do magic.
     opt.optimize(states, pairs, n_iterations=3, engine='hoomd')
     opt.plot()
-
-    os.chdir('..')
 
 if __name__ == "__main__":
     test_full_lj()
