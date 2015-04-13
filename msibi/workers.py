@@ -12,7 +12,7 @@ from subprocess import Popen
 from msibi.utils.general import backup_file
 from msibi.utils.exceptions import UnsupportedEngine
 
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s -- %(asctime)s] %(message)s')
 
 
 def run_query_simulations(states, engine='hoomd'):
