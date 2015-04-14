@@ -46,6 +46,7 @@ install:
   - cmake .. -DPYTHON_EXECUTABLE="$HOME/miniconda/envs/p27/bin/python" -DBoost_DEBUG=ON
   - make -j 2
   - sudo make install
+  - cd ../..
 
   # Install "actual" dependencies from requirements.txt
   - python setup.py install
