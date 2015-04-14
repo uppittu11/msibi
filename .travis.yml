@@ -26,6 +26,8 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
+  # Ubuntu boost apparently doesn't work with python3?
+  - conda create -q -n p27 python=2.7
   # Install dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
@@ -41,7 +43,7 @@ install:
   - cd hoomd-v1.0.4
   - mkdir build
   - cd build
-  - cmake .. -DBoost_DEBUG=ON
+  - cmake .. -DPYTHON_EXECUTABLE="$HOME/miniconda/envs/p27/bin/python" -DBoost_DEBUG=ON
   - make -j 2
   - sudo make install
 

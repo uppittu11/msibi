@@ -65,15 +65,14 @@ class MSIBI(object):
         self.rdf_r_range = np.array([0.0, self.rdf_cutoff + self.dr])
         self.rdf_n_bins = self.n_rdf_points + 1
 
-
         # TODO: Description of use for pot vs rdf cutoff.
-        if not pot_cutoff:
+        if pot_cutoff is None:
             pot_cutoff = rdf_cutoff
         self.pot_cutoff = pot_cutoff
         # TODO: Describe why potential needs to be messed with to match the RDF.
         self.pot_r = np.arange(0.0, self.pot_cutoff + self.dr, self.dr)
 
-        if not r_switch:
+        if r_switch is None:
             r_switch = self.pot_r[-5]
         self.r_switch = r_switch
 
@@ -183,7 +182,7 @@ class MSIBI(object):
         potentials_dir : path, optional, default="'working_dir'/potentials"
 
         """
-        if not potentials_dir:
+        if potentials_dir is None:
             self.potentials_dir = os.path.join(self.base_dir, 'potentials')
         else:
             self.potentials_dir = potentials_dir
