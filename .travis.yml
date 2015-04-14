@@ -41,7 +41,7 @@ install:
   - cd hoomd-v1.0.4
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake .. -DBoost_DEBUG=ON
   - make -j 2
   - sudo make install
 
