@@ -41,7 +41,6 @@ def test_full_lj():
 
     # Do magic.
     opt.optimize(states, pairs, n_iterations=3, engine='hoomd')
-    opt.plot()
 
 if __name__ == "__main__":
     test_full_lj()
