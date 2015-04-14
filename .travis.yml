@@ -1,15 +1,12 @@
 language: python
 
-compiler: gcc
+compiler: clang
 
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
   - "2.7"
   - "3.3"
   - "3.4"
-
-before_install:
-  - sudo apt-get update
 
 install:
   # You may want to periodically update this, although the conda update
@@ -37,8 +34,8 @@ install:
   - conda install -c https://conda.binstar.org/omnia mdtraj-dev=1.4.0
 
   # Download and install HOOMD
-  - sudo apt-get install libboost-all-dev
   - sudo apt-get install openmpi-bin
+  - sudo apt-get install libboost-all-dev
   - wget https://codeblue.umich.edu/hoomd-blue/downloads/1.0/hoomd-1.0.4.tar.bz2
   - tar -xvf hoomd-1.0.4.tar.bz2
   - cd hoomd-v1.0.4
