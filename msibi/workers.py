@@ -7,7 +7,7 @@ from math import ceil
 from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool
 import os
-from subprocess import Popen
+from subprocess import Popen, PIPE
 import sys
 
 from msibi.utils.general import backup_file
@@ -58,10 +58,13 @@ def _hoomd_worker(args):
             logging.info('    Running state {state.name} on CPU'.format(**locals()))
             cmds = ['hoomd', 'run.py']
 
-        proc = Popen(cmds, cwd=state.state_dir, stdout=log_file, stderr=err_file,
+        #proc = Popen(cmds, cwd=state.state_dir, stdout=log_file, stderr=err_file,
+        proc = Popen(cmds, cwd=state.state_dir, stdout=PIPE, stderr=PIPE,
                      universal_newlines=True)
         logging.info("    Launched HOOMD in {state.state_dir}".format(**locals()))
-        proc.communicate()
+        log, err = proc.communicate()
+        print(log)
+        print(err)
         logging.info("    Finished in {state.state_dir}.".format(**locals()))
     _post_query(state)
 
