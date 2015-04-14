@@ -10,8 +10,6 @@ python:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install libboost-all-dev
-  - sudo apt-get install openmpi-bin
 
 install:
   # You may want to periodically update this, although the conda update
@@ -39,6 +37,8 @@ install:
   - conda install -c https://conda.binstar.org/omnia mdtraj-dev=1.4.0
 
   # Download and install HOOMD
+  - sudo apt-get install libboost-all-dev
+  - sudo apt-get install openmpi-bin
   - wget https://codeblue.umich.edu/hoomd-blue/downloads/1.0/hoomd-1.0.4.tar.bz2
   - tar -xvf hoomd-1.0.4.tar.bz2
   - cd hoomd-v1.0.4
