@@ -58,7 +58,7 @@ def _hoomd_worker(args):
             logging.info('    Running state {state.name} on CPU'.format(**locals()))
             cmds = ['hoomd', 'run.py']
 
-        proc = Popen(cmds, cwd=state.state_dir, stdout=sys.stdout, stderr=sys.stdout,
+        proc = Popen(cmds, cwd=state.state_dir, stdout=log_file, stderr=err_file,
                      universal_newlines=True)
         logging.info("    Launched HOOMD in {state.state_dir}".format(**locals()))
         proc.communicate()
