@@ -62,8 +62,8 @@ def _hoomd_worker(args):
         proc = Popen(cmds, cwd=state.state_dir, stdout=PIPE, stderr=PIPE,
                      universal_newlines=True)
         logging.info("    Launched HOOMD in {state.state_dir}".format(**locals()))
-        log, err = proc.communicate()
-        print(log)
+        hoomd_log, hoomd_err = proc.communicate()
+        log.write(hoomd_log)
         print(err)
         logging.info("    Finished in {state.state_dir}.".format(**locals()))
     _post_query(state)
