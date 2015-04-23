@@ -32,7 +32,7 @@ class Pair(object):
         self.states = OrderedDict()
         if isinstance(potential, string_types):
             self.potential = np.loadtxt(potential)[:, 1]
-            # TODO: this could be dangerous
+            # TODO: this could be dangerous if the file is not in HOOMD format
         else:
             self.potential = potential
         self.previous_potential = None
@@ -74,7 +74,7 @@ class Pair(object):
         f_fit = calc_similarity(rdf[:, 1], self.states[state]['target_rdf'][:, 1])
 
         if smooth:
-            rdf[:, 1] = savitzky_golay(rdf[:, 1], 5, 1, deriv=0, rate=1)
+            rdf[:, 1] = savitzky_golay(rdf[:, 1], 3, 1, deriv=0, rate=1)
         return rdf, f_fit
 
     def update_potential(self, pot_r, r_switch=None):

@@ -12,12 +12,13 @@ except KeyError:
     mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
+#import seaborn as sns
 
 from msibi.potentials import tail_correction
 from msibi.workers import run_query_simulations
 
 
+"""
 sns.set_style('white', {'legend.frameon': True,
                         'axes.edgecolor': '0.0',
                         'axes.linewidth': 1.0,
@@ -25,6 +26,7 @@ sns.set_style('white', {'legend.frameon': True,
                         'ytick.direction': 'in',
                         'xtick.major.size': 4.0,
                         'ytick.major.size': 4.0})
+"""
 
 
 class MSIBI(object):
@@ -144,7 +146,10 @@ class MSIBI(object):
         # Chunk and launch RDF processes.
         # CTK: Everything below should be "more correctly" accomplishable with
         # a pool but I couldn't get it to work properly.
-        n_procs = mp.cpu_count()
+
+        #n_procs = mp.cpu_count()
+        logging.warning('Changing n_procs in rdf calculation to 2')
+        n_procs = 1
         state_ids = manager_dict.keys()
         chunk_size = int(math.ceil(len(state_ids) / n_procs))
         procs = list()
@@ -223,22 +228,3 @@ class MSIBI(object):
             state.save_runscript(table_potentials, table_width=len(self.pot_r),
                                  engine=engine)
 
-    def plot(self):
-        """Generate plots showing the evolution of each pair potential. """
-        try:
-            os.mkdir('figures')
-        except OSError:
-            pass
-
-        for pair in self.pairs:
-            for n in range(self.n_iterations):
-                filename = 'step{0:d}.{1}'.format(
-                    n, os.path.basename(pair.potential_file))
-                potential_file = os.path.join(self.potentials_dir, filename)
-                data = np.loadtxt(potential_file)
-                plt.plot(data[:, 0], data[:, 1],
-                         linewidth=1, label='n={0:d}'.format(n))
-            plt.xlabel('r')
-            plt.ylabel('V(r)')
-            plt.legend()
-            plt.savefig('figures/{0}.pdf'.format(pair.name))

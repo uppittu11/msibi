@@ -3,7 +3,7 @@ from __future__ import print_function, division
 from distutils.spawn import find_executable
 import itertools
 import logging
-from math import ceil
+from math import ceil, floor
 from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool
 import os
@@ -19,6 +19,7 @@ def run_query_simulations(states, engine='hoomd'):
     """Run all query simulations for a single iteration. """
     # Gather hardware info.
     gpus = _get_gpu_info()
+    logging.info(gpus)
     if gpus is None:
         n_procs = cpu_count()
         gpus = []
@@ -27,14 +28,16 @@ def run_query_simulations(states, engine='hoomd'):
         n_procs = len(gpus)
         logging.info("Launching {n_procs} GPU threads...".format(**locals()))
 
+    logging.info(n_procs)
     if engine.lower() == 'hoomd':
         worker = _hoomd_worker
     else:
         raise UnsupportedEngine(engine)
 
     n_states = len(states)
-    worker_args = zip(states, range(n_states), itertools.repeat(gpus))
     chunk_size = ceil(n_states / n_procs)
+    worker_args = zip(states, range(n_states), itertools.repeat(gpus), 
+            itertools.repeat(chunk_size))
 
     # Use thread pool to manage MD workers.
     pool = Pool(n_procs)
@@ -45,12 +48,19 @@ def run_query_simulations(states, engine='hoomd'):
 
 def _hoomd_worker(args):
     """Worker for managing a single HOOMD-blue simulation. """
-    state, idx, gpus = args
+    state, idx, gpus, chunk_size = args
+    logging.debug('%s %d %s %d' % (state.name, idx, gpus, chunk_size))
     log_file = os.path.join(state.state_dir, 'log.txt')
     err_file = os.path.join(state.state_dir, 'err.txt')
     with open(log_file, 'w') as log, open(err_file, 'w') as err:
         if gpus:
-            card = gpus[idx % len(gpus)]
+            logging.debug('idx=%d' % idx)
+            logging.debug('chunk_size=%d' % chunk_size)
+            logging.debug(idx / chunk_size)
+            logging.debug('floor(idx/chunk_size)=%.2f' % floor(idx/chunk_size))
+            #logging.debug('gpu=gpus[floor(idx / chunk_size)])
+            card = gpus[int(floor(idx / chunk_size))]
+            logging.info(card)
             logging.info('    Running state {state.name} on GPU {card}'.format(**locals()))
             cmds = ['hoomd', 'run.py', '--gpu={card}'.format(**locals())]
         else:
