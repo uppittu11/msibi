@@ -7,12 +7,13 @@ from math import ceil, floor
 from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool
 import os
-from subprocess import Popen
+from subprocess import Popen, PIPE
+import sys
 
 from msibi.utils.general import backup_file
 from msibi.utils.exceptions import UnsupportedEngine
 
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s -- %(asctime)s] %(message)s')
 
 
 def run_query_simulations(states, engine='hoomd'):
@@ -67,10 +68,13 @@ def _hoomd_worker(args):
             logging.info('    Running state {state.name} on CPU'.format(**locals()))
             cmds = ['hoomd', 'run.py']
 
-        proc = Popen(cmds, cwd=state.state_dir, stdout=log, stderr=err,
+        #proc = Popen(cmds, cwd=state.state_dir, stdout=log_file, stderr=err_file,
+        proc = Popen(cmds, cwd=state.state_dir, stdout=PIPE, stderr=PIPE,
                      universal_newlines=True)
         logging.info("    Launched HOOMD in {state.state_dir}".format(**locals()))
-        proc.communicate()
+        hoomd_log, hoomd_err = proc.communicate()
+        log.write(hoomd_log)
+        print(err)
         logging.info("    Finished in {state.state_dir}.".format(**locals()))
     _post_query(state)
 

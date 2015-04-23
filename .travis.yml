@@ -1,12 +1,14 @@
 language: python
 
+compiler: clang
+
 python:
   # We don't actually use the Travis Python, but this keeps it organized.
   - "2.7"
   - "3.3"
   - "3.4"
+
 install:
-  - sudo apt-get update
   # You may want to periodically update this, although the conda update
   # conda line below will keep everything up-to-date.  We do this
   # conditionally because it saves us some downloading if the version is
@@ -24,12 +26,28 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  # Replace dep1 dep2 ... with your dependencies
+  # Ubuntu boost apparently doesn't work with python3?
+  - conda create -q -n p27 python=2.7
+  # Install dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
   - pip install coveralls coverage pytest
   # Users need to have MDTraj pre-installed.
-  - conda install -c https://conda.binstar.org/omnia mdtraj
+  - conda install -c https://conda.binstar.org/omnia mdtraj-dev=1.4.0
+
+  # Download and install HOOMD
+  - sudo apt-get install openmpi-bin
+  - sudo apt-get install libboost-all-dev
+  - wget https://codeblue.umich.edu/hoomd-blue/downloads/1.0/hoomd-1.0.4.tar.bz2
+  - tar -xvf hoomd-1.0.4.tar.bz2
+  - cd hoomd-v1.0.4
+  - mkdir build
+  - cd build
+  - cmake .. -DPYTHON_EXECUTABLE="$HOME/miniconda/envs/p27/bin/python" -DBoost_DEBUG=ON
+  - make -j 2
+  - sudo make install
+  - cd ../..
+
   # Install "actual" dependencies from requirements.txt
   - python setup.py install
 
