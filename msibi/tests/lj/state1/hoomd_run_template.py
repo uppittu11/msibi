@@ -3,7 +3,7 @@ nvt_int = integrate.bdnvt(group=all, T=T_final)
 integrate.mode_standard(dt=0.001)
 
 output_dcd = dump.dcd(filename='query.dcd', period=1000, overwrite=True)
-run(1e4)
+run(1e5)
 
 output_xml = dump.xml()
 output_xml.set_params(all=True)

@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 
+
 from distutils.spawn import find_executable
 import itertools
 import logging
@@ -97,5 +98,3 @@ def _get_gpu_info():
                 line in os.popen('nvidia-smi -L').readlines()]
         logging.info('GPUs found:', gpus)
         return gpus
-
-
