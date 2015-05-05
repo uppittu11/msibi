@@ -2,7 +2,6 @@ all = group.all()
 nvt_int = integrate.bdnvt(group=all, T=T_final)
 integrate.mode_standard(dt=0.001)
 
-os.system('rm query.dcd')
 output_dcd = dump.dcd(filename='query.dcd', period=1000, overwrite=True)
 run(1e4)
 

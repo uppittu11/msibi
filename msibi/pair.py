@@ -60,13 +60,26 @@ class Pair(object):
                               'pair_indices': pair_indices,
                               'f_fit': []}
 
-    def compute_current_rdf(self, state, r_range, n_bins, smooth=True):
+    def compute_current_rdf(self, state, r_range, n_bins, smooth=True, max_distance_pairs=1e7):
         """ """
-        pairs = self.states[state]['pair_indices']
         # TODO: More elegant way to handle units.
         #       See https://github.com/ctk3b/msibi/issues/2
-        r, g_r = md.compute_rdf(state.traj, pairs, r_range=r_range / 10,
-                                n_bins=n_bins)
+        pairs = self.states[state]['pair_indices']
+
+        # Break up the RDF calculation to prevent memory issues for long
+        # trajectories and/or calculations with a lot of pairs.
+        frame_chunk = int(max_distance_pairs // len(pairs))
+        first_frame = 0
+        g_r_all = None
+        for last_frame in range(frame_chunk, state.traj.n_frames + frame_chunk, frame_chunk):
+            r, g_r = md.compute_rdf(state.traj[first_frame: last_frame], pairs, r_range=r_range / 10, n_bins=n_bins)
+            if g_r_all is None:
+                g_r_all = np.zeros_like(g_r)
+            # The last chunk may be smaller than the rest so we have to weight
+            # by the number of frames used for this RDF calculation.
+            g_r_all += g_r / len(state.traj[first_frame: last_frame])
+            first_frame = last_frame
+
         r *= 10
         rdf = np.vstack((r, g_r)).T
 

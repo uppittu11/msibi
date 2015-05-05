@@ -20,7 +20,6 @@ def run_query_simulations(states, engine='hoomd'):
     """Run all query simulations for a single iteration. """
     # Gather hardware info.
     gpus = _get_gpu_info()
-    logging.info(gpus)
     if gpus is None:
         n_procs = cpu_count()
         gpus = []
@@ -29,7 +28,6 @@ def run_query_simulations(states, engine='hoomd'):
         n_procs = len(gpus)
         logging.info("Launching {n_procs} GPU threads...".format(**locals()))
 
-    logging.info(n_procs)
     if engine.lower() == 'hoomd':
         worker = _hoomd_worker
     else:
@@ -50,7 +48,7 @@ def run_query_simulations(states, engine='hoomd'):
 def _hoomd_worker(args):
     """Worker for managing a single HOOMD-blue simulation. """
     state, idx, gpus, chunk_size = args
-    logging.debug('%s %d %s %d' % (state.name, idx, gpus, chunk_size))
+    logging.debug('state.name %s, idx %d, gpus %s, chunk_size %d' % (state.name, idx, gpus, chunk_size))
     log_file = os.path.join(state.state_dir, 'log.txt')
     err_file = os.path.join(state.state_dir, 'err.txt')
     with open(log_file, 'w') as log, open(err_file, 'w') as err:
@@ -92,7 +90,12 @@ def _get_gpu_info():
     """ """
     nvidia_smi = find_executable('nvidia-smi')
     if not nvidia_smi:
+        logging.info('No GPUs found.')
         return
     else:
-        return [line.split()[1].replace(':', '') for 
+        gpus = [line.split()[1].replace(':', '') for
                 line in os.popen('nvidia-smi -L').readlines()]
+        logging.info('GPUs found:', gpus)
+        return gpus
+
+

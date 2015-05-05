@@ -6,21 +6,9 @@ import multiprocessing as mp
 import os
 
 import numpy as np
-#import seaborn as sns
 
 from msibi.potentials import tail_correction
 from msibi.workers import run_query_simulations
-
-
-"""
-sns.set_style('white', {'legend.frameon': True,
-                        'axes.edgecolor': '0.0',
-                        'axes.linewidth': 1.0,
-                        'xtick.direction': 'in',
-                        'ytick.direction': 'in',
-                        'xtick.major.size': 4.0,
-                        'ytick.major.size': 4.0})
-"""
 
 
 class MSIBI(object):
@@ -40,6 +28,7 @@ class MSIBI(object):
         A log file for tracking the quality of fits at every iteration.
     smooth_rdfs : bool, optional, default=False
         Use a smoothing function to reduce the noise in the RDF data.
+    max_distance_pairs : int
 
     Attributes
     ----------
@@ -65,10 +54,12 @@ class MSIBI(object):
     """
 
     def __init__(self, rdf_cutoff, n_rdf_points, pot_cutoff=None, r_switch=None,
-                 status_filename='f_fits.log', smooth_rdfs=False, base_dir=None):
+                 status_filename='f_fits.log', smooth_rdfs=False, base_dir=None,
+                 max_distance_pairs=1e7):
         self.states = []
         self.pairs = []
         self.n_iterations = 10  # Can be overridden in optimize().
+        self.max_distance_pairs = max_distance_pairs
 
         self.rdf_cutoff = rdf_cutoff
         self.n_rdf_points = n_rdf_points
@@ -146,8 +137,8 @@ class MSIBI(object):
         # a pool but I couldn't get it to work properly.
 
         #n_procs = mp.cpu_count()
-        logging.warning('Changing n_procs in rdf calculation to 2')
         n_procs = 1
+        logging.warning('Changing n_procs in rdf calculation to {}'.format(n_procs))
         state_ids = manager_dict.keys()
         chunk_size = int(math.ceil(len(state_ids) / n_procs))
         procs = list()
@@ -167,7 +158,8 @@ class MSIBI(object):
             pair, state = manager_dict[state_id]
             rdf, f_fit = pair.compute_current_rdf(state, self.rdf_r_range,
                                                   n_bins=self.rdf_n_bins,
-                                                  smooth=self.smooth_rdfs)
+                                                  smooth=self.smooth_rdfs,
+                                                  max_distance_pairs=self.max_distance_pairs)
 
             # Save RDF to a file for post-processing.
             filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(

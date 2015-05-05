@@ -9,7 +9,7 @@ from msibi import MSIBI, State, Pair, mie
 def test_full_lj():
     """Test the full Lennard-Jones optimization. """
     # Root directory for the Lennard-Jones optimization.
-    lj = os.path.join(os.path.dirname(__file__), 'lj')
+    lj = os.path.abspath(os.path.join(os.path.dirname(__file__), 'lj'))
 
     # Set up global parameters.
     rdf_cutoff = 5.0
@@ -41,6 +41,10 @@ def test_full_lj():
 
     # Do magic.
     opt.optimize(states, pairs, n_iterations=3, engine='hoomd')
+
+
+#def test_full_lj_big_chunk():
+    # make sure this matches the other test
 
 if __name__ == "__main__":
     test_full_lj()
