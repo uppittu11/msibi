@@ -3,6 +3,7 @@ from __future__ import division
 import logging
 import math
 import multiprocessing as mp
+import memory_profiler
 import os
 
 import numpy as np
@@ -85,8 +86,8 @@ class MSIBI(object):
             self.base_dir = base_dir
 
         status_filename = os.path.join(self.base_dir, status_filename)
-        logging.basicConfig(filename=status_filename, level=logging.INFO,
-                            format='%(message)s', filemode='a')
+        logging.basicConfig(filename='optimize.log', 
+                level=logging.INFO, format='%(message)s')
 
     def optimize(self, states, pairs, n_iterations=10, engine='hoomd',
                  start_iteration=0):
@@ -100,11 +101,16 @@ class MSIBI(object):
 
         for n in range(start_iteration + self.n_iterations):
             logging.info("-------- Iteration {n} --------".format(**locals()))
+            logging.info('running query simulations')
             run_query_simulations(self.states, engine=engine)
+            logging.info('ran query simulations')
+            logging.info('updating potentials')
             self._update_potentials(n, engine)
+            logging.info('updated potentials')
 
     def _update_potentials(self, iteration, engine):
         """Update the potentials for each pair. """
+        logging.info('updating rdf')
         updated_rdf_f_fit = self._recompute_rdfs(iteration)
 
         state_id = 0
@@ -124,13 +130,20 @@ class MSIBI(object):
         """Recompute all RDFs after a given iteration. """
         # Give each state an ID and store it in a manager's dict which is used
         # by _rdf_worker to lookup the pair and state from the main process.
+        logging.info('making manager')
         manager = mp.Manager()
+        logging.info('made manager')
+        logging.info('making manager dict')
         manager_dict = manager.dict()
         state_id = 0
         for pair in self.pairs:
             for state in pair.states:
+                logging.info('adding state "%s" to pair "%s"' % (pair.name, state.name))
                 manager_dict[state_id] = (pair, state)
                 state_id += 1
+                logging.info('    added state "%s" to pair "%s", state id = %d' %
+                        (pair.name, state.name, id(state)))
+        logging.info('finished making manager dict')
 
         # Chunk and launch RDF processes.
         # CTK: Everything below should be "more correctly" accomplishable with
@@ -138,7 +151,7 @@ class MSIBI(object):
 
         #n_procs = mp.cpu_count()
         n_procs = 1
-        logging.warning('Changing n_procs in rdf calculation to {}'.format(n_procs))
+        logging.info('Changing n_procs in rdf calculation to {}'.format(n_procs))
         state_ids = manager_dict.keys()
         chunk_size = int(math.ceil(len(state_ids) / n_procs))
         procs = list()
@@ -156,10 +169,12 @@ class MSIBI(object):
         """Recompute the current RDFs for a chunk of (pair, state) tuples. """
         for state_id in state_ids:
             pair, state = manager_dict[state_id]
+            logging.info('computing "%s" rdf at state "%s"' % (pair.name, state.name))
             rdf, f_fit = pair.compute_current_rdf(state, self.rdf_r_range,
                                                   n_bins=self.rdf_n_bins,
                                                   smooth=self.smooth_rdfs,
                                                   max_distance_pairs=self.max_distance_pairs)
+            logging.info('computed "%s" rdf at state "%s"' % (pair.name, state.name))
 
             # Save RDF to a file for post-processing.
             filename = 'rdfs/pair_{0}-state_{1}-step{2}.txt'.format(

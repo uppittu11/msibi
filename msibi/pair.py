@@ -1,5 +1,8 @@
 from collections import OrderedDict
+import cPickle as pickle
+import logging
 import os
+import tempfile
 
 import mdtraj as md
 import numpy as np
@@ -9,7 +12,6 @@ from msibi.utils.exceptions import UnsupportedEngine
 from msibi.utils.error_calculation import calc_similarity
 from msibi.potentials import tail_correction, head_correction, alpha_array
 from msibi.utils.smoothing import savitzky_golay
-
 
 class Pair(object):
     """A pair interaction to be optimized.
@@ -53,22 +55,34 @@ class Pair(object):
             Each row gives the indices of two atoms representing a pair.
 
         """
+        #file_handle, filename = tempfile.mkstemp()
+        pair_indices_filename = './indices-{0}-{1}.p'.format(
+                self.name, state.name)
+        with open(pair_indices_filename, 'wb') as pickle_file:
+            pickle.dump(pair_indices, pickle_file)
+
         self.states[state] = {'target_rdf': target_rdf,
                               'current_rdf': None,
                               'alpha': alpha,
                               'alpha_form': alpha_form,
-                              'pair_indices': pair_indices,
+                              'pair_indices': pair_indices_filename,
                               'f_fit': []}
 
     def compute_current_rdf(self, state, r_range, n_bins, smooth=True, max_distance_pairs=1e7):
         """ """
         # TODO: More elegant way to handle units.
         #       See https://github.com/ctk3b/msibi/issues/2
-        pairs = self.states[state]['pair_indices']
+        with open(self.states[state]['pair_indices'], 'rb') as pickle_file:
+            pairs = pickle.load(pickle_file)
+
+        #pairs = self.states[state]['pair_indices']
 
         # Break up the RDF calculation to prevent memory issues for long
         # trajectories and/or calculations with a lot of pairs.
         frame_chunk = int(max_distance_pairs // len(pairs))
+        logging.info('calculating rdf for pair "%s" at state "%s"' 
+                % (self.name, state.name))
+        logging.info('frame_chunk = %d' % frame_chunk)
         first_frame = 0
         g_r_all = None
         for last_frame in range(frame_chunk, state.traj.n_frames + frame_chunk, frame_chunk):
@@ -80,6 +94,7 @@ class Pair(object):
             g_r_all += g_r / len(state.traj[first_frame: last_frame])
             first_frame = last_frame
 
+        del pairs
         r *= 10
         rdf = np.vstack((r, g_r)).T
 
