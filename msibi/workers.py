@@ -35,10 +35,9 @@ def run_query_simulations(states, engine='hoomd'):
 
     n_states = len(states)
     worker_args = zip(states, range(n_states), itertools.repeat(gpus))
-    chunk_size = ceil(n_states / n_procs)
 
     pool = Pool(n_procs)
-    pool.imap(worker, worker_args, chunk_size)
+    pool.map_async(worker, worker_args, n_procs)
     pool.close()
     pool.join()
 
@@ -56,6 +55,7 @@ def _hoomd_worker(args):
             logging.info('    Running state {state.name} on CPU'.format(**locals()))
             cmds = ['hoomd', 'run.py']
 
+        logging.info(cmds)
         proc = Popen(cmds, cwd=state.state_dir, stdout=log, stderr=err,
                      universal_newlines=True)
         logging.info("    Launched HOOMD in {state.state_dir}".format(**locals()))
