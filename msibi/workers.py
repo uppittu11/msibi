@@ -86,7 +86,10 @@ def _hoomd_worker(args):
         executable = 'python'
     with open(log_file, 'w') as log, open(err_file, 'w') as err:
         if gpus:
-            card = gpus[idx % len(gpus)]
+            if state.name == 'bilayer':
+               card = ",".join([str(i) for i in gpus[:3]])
+            elif state.name == 'bulk':
+               card = gpus[3]
             cmds = [executable, 'run.py', '--gpu={card}'.format(**locals())]
         else:
             logging.info('    Running state {state.name} on CPU'.format(**locals()))
